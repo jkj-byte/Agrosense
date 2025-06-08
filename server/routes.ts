@@ -61,11 +61,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let lastError;
       
       for (const apiKey of apiKeys) {
+        if (!apiKey) continue;
+        
         try {
           plantIdResponse = await fetch('https://api.plant.id/v3/health_assessment', {
             method: 'POST',
             headers: {
-              'Api-Key': apiKey,
+              'Api-Key': apiKey as string,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -82,8 +84,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lastError = `API Key ${apiKey.substring(0, 8)}...: ${plantIdResponse.statusText} - ${errorText}`;
             console.warn('Plant.ID API Key failed:', lastError);
           }
-        } catch (error) {
-          lastError = `API Key ${apiKey.substring(0, 8)}...: ${error.message}`;
+        } catch (error: any) {
+          lastError = `API Key ${apiKey.substring(0, 8)}...: ${error?.message || 'Unknown error'}`;
           console.warn('Plant.ID API Key error:', lastError);
         }
       }
