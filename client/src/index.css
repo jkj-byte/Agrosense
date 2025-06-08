@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(145, 29%, 15%);
+  --muted: hsl(120, 30%, 95%);
+  --muted-foreground: hsl(145, 15%, 45%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(145, 29%, 15%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(145, 29%, 15%);
+  --border: hsl(120, 20%, 85%);
+  --input: hsl(120, 20%, 85%);
+  --primary: hsl(145, 65%, 45%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(120, 30%, 95%);
+  --secondary-foreground: hsl(145, 25%, 20%);
+  --accent: hsl(30, 100%, 50%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(60, 9%, 98%);
+  --ring: hsl(145, 29%, 15%);
+  --radius: 0.5rem;
+  
+  /* Custom AgroSense colors */
+  --agro-green: hsl(145, 65%, 45%);
+  --agro-green-light: hsl(82, 39%, 30%);
+  --agro-orange: hsl(30, 100%, 50%);
+  --agro-bg: hsl(120, 60%, 97%);
+  --agro-text: hsl(145, 29%, 15%);
+}
+
+.dark {
+  --background: hsl(145, 15%, 8%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(145, 15%, 15%);
+  --muted-foreground: hsl(145, 10%, 65%);
+  --popover: hsl(145, 15%, 8%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(145, 15%, 8%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(145, 15%, 15%);
+  --input: hsl(145, 15%, 15%);
+  --primary: hsl(145, 65%, 45%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(145, 15%, 15%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(30, 100%, 50%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 63%, 31%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(145, 30%, 65%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom agricultural styling */
+.agro-bg {
+  background-color: var(--agro-bg);
+}
+
+.agro-text {
+  color: var(--agro-text);
+}
+
+.agro-green {
+  color: var(--agro-green);
+}
+
+.agro-green-light {
+  color: var(--agro-green-light);
+}
+
+.agro-orange {
+  color: var(--agro-orange);
+}
+
+.bg-agro-green {
+  background-color: var(--agro-green);
+}
+
+.bg-agro-green-light {
+  background-color: var(--agro-green-light);
+}
+
+.bg-agro-orange {
+  background-color: var(--agro-orange);
+}
+
+.border-agro-green {
+  border-color: var(--agro-green);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, var(--agro-green), var(--agro-green-light), var(--agro-orange));
+}
+
+/* File upload animations */
+.file-upload-area {
+  transition: all 0.3s ease;
+}
+
+.file-upload-area:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.file-upload-area.drag-over {
+  border-color: var(--agro-green);
+  background-color: var(--agro-bg);
+}
+
+/* Card hover effects */
+.feature-card {
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+}
+
+/* Loading animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Progress bar animation */
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--agro-green);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--agro-green-light);
+}
