@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertDiseaseAnalysisSchema, insertCropRecommendationSchema } from "@shared/schema";
@@ -11,7 +11,7 @@ import path from "path";
 const upload = multer({ 
   dest: 'uploads/',
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
@@ -30,7 +30,7 @@ if (!fs.existsSync(uploadsDir)) {
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Plant disease detection endpoint
-  app.post("/api/detect-disease", upload.single('image'), async (req, res) => {
+  app.post("/api/detect-disease", upload.single('image'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No image file uploaded" });

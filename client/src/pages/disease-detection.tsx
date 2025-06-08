@@ -29,7 +29,17 @@ export default function DiseaseDetection() {
       const formData = new FormData();
       formData.append('image', file);
       
-      const response = await apiRequest('POST', '/api/detect-disease', formData);
+      const response = await fetch('/api/detect-disease', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || 'Failed to upload image');
+      }
+      
       return response.json();
     },
     onSuccess: (data: DiseaseDetectionResult) => {
