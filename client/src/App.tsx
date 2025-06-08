@@ -7,7 +7,7 @@ import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import Home from "@/pages/home";
 import DiseaseDetection from "@/pages/disease-detection";
-import CropRecommendations from "@/pages/crop-recommendations";
+
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,7 +18,7 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/disease-detection" component={DiseaseDetection} />
-          <Route path="/crop-recommendations" component={CropRecommendations} />
+
           <Route component={NotFound} />
         </Switch>
       </main>
