@@ -21,6 +21,11 @@ An intelligent agricultural platform that combines AI-powered plant disease dete
 - Confidence scores for recommendations
 - Alternative crop suggestions
 - Feature importance analysis
+- Trained on Crop Recommendation Dataset containing:
+  - 2200+ instances of crop data
+  - 22 different crop varieties
+  - Soil composition data
+  - Climate parameters
 
 ## Tech Stack 💻
 
@@ -60,28 +65,20 @@ npm install
 ```bash
 cd server
 pip install -r requirements.txt
-```
-
-4. Set up environment variables
-Create a `.env` file in the root directory:
-```env
-PLANT_ID_API_KEY=your_api_key_here
+cd ..
 ```
 
 ### Running the Application
 
-1. Start the frontend development server
+1. Start the development server
 ```bash
-npm run dev
+npx tsx server/index.ts
 ```
 
-2. Start the backend server (in a separate terminal)
-```bash
-cd server
-npm run start
+2. Open your browser and navigate to:
 ```
-
-The application will be available at `http://localhost:5173`
+http://localhost:5173
+```
 
 ## Project Structure 📁
 
@@ -95,18 +92,29 @@ agrosense/
 ├── server/              # Backend Node.js server
 │   ├── routes/         # API routes
 │   ├── ml_model.py     # Machine learning model
+│   ├── data/          # Dataset files
+│   │   └── Crop_recommendation.csv  # Crop recommendation dataset
 │   └── ...
 ├── shared/             # Shared types and utilities
 └── uploads/           # Temporary storage for uploaded images
 ```
 
-## Contributing 🤝
+## Dataset 📊
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+The crop recommendation system uses the "Crop Recommendation Dataset" which includes:
+- 2200+ entries with soil and climate data
+- Parameters for each entry:
+  - N (Nitrogen): ratio of Nitrogen content in soil
+  - P (Phosphorous): ratio of Phosphorous content in soil
+  - K (Potassium): ratio of Potassium content in soil
+  - Temperature: temperature in degrees Celsius
+  - Humidity: relative humidity in %
+  - pH: pH value of the soil
+  - Rainfall: rainfall in mm
+- 22 different crop labels including rice, maize, chickpea, kidneybeans, pigeonpeas, mothbeans, mungbean, blackgram, lentil, pomegranate, banana, mango, grapes, watermelon, muskmelon, apple, orange, papaya, coconut, cotton, jute, coffee
+
+## Note ⚠️
+This project includes API keys in the code for demonstration purposes. In a production environment, these should be moved to environment variables.
 
 ## License 📝
 
@@ -116,4 +124,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Plant.ID API for plant disease detection
 - Shadcn/ui for beautiful components
-- All contributors who helped with the project
+- Crop Recommendation Dataset from Kaggle
