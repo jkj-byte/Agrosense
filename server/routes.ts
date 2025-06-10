@@ -6,6 +6,11 @@ import multer from "multer";
 import sharp from "sharp";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -50,6 +55,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Call PlantID API for disease detection with fallback keys
       const apiKeys = [
         "c3hFssf4yjkGg1mxieN1oBjvsfpXIrktrJFh7txgnIHtiJMDuk",
+        "pofEoMtP9cX9RdqQ5Ac09EYJw0LmaIUqhM2nM88PIMbFQOlfnS",
+        "2hcleIYsBxHKI3GP2qy7F1Q2nxGcZiESpos5NjAPHFmh66au2L",
         process.env.PLANTID_API_KEY
       ].filter(key => key && key !== "default_key");
       
@@ -72,8 +79,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             },
             body: JSON.stringify({
               images: [`data:image/jpeg;base64,${base64Image}`],
-              modifiers: ["similar_images"],
-              plant_details: ["common_names"],
+              health: "all",
+              symptoms: true,
+              classification_level: "species"
             })
           });
           
@@ -106,53 +114,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let preventionMethods: string[] = [];
 
       // Check if Plant.ID returned valid disease detection results
-      if (plantIdResult.health_assessment) {
-        if (plantIdResult.health_assessment.diseases && plantIdResult.health_assessment.diseases.length > 0) {
-          const disease = plantIdResult.health_assessment.diseases[0];
-          diseaseName = disease.name || "Disease Detected";
-          confidence = Math.round((disease.probability || 0) * 100);
-          description = disease.description || "Disease identified in the plant image.";
-          
-          // Extract treatment suggestions from Plant.ID if available
-          if (disease.treatment) {
-            if (disease.treatment.biological && Array.isArray(disease.treatment.biological)) {
-              treatments = [...treatments, ...disease.treatment.biological.slice(0, 3)];
-            }
-            if (disease.treatment.chemical && Array.isArray(disease.treatment.chemical)) {
-              treatments = [...treatments, ...disease.treatment.chemical.slice(0, 2)];
-            }
-            if (disease.treatment.prevention && Array.isArray(disease.treatment.prevention)) {
-              preventionMethods = disease.treatment.prevention.slice(0, 5);
-            }
-          }
-        } else if (plantIdResult.health_assessment.is_healthy && plantIdResult.health_assessment.is_healthy.probability > 0.7) {
+      if (plantIdResult.result) {
+        if (plantIdResult.result.is_healthy.binary) {
           diseaseName = "Healthy Plant";
-          confidence = Math.round(plantIdResult.health_assessment.is_healthy.probability * 100);
+          confidence = Math.round(plantIdResult.result.is_healthy.probability * 100);
           description = "The plant appears to be healthy with no visible diseases detected.";
           treatments = ["Continue current care routine", "Monitor plant regularly", "Maintain proper watering and lighting"];
           preventionMethods = ["Regular inspection", "Proper watering schedule", "Good air circulation", "Appropriate fertilization"];
+        } else if (plantIdResult.result.disease && plantIdResult.result.disease.suggestions.length > 0) {
+          // Filter out redundant suggestions
+          const validSuggestions = plantIdResult.result.disease.suggestions.filter(s => !s.redundant);
+          if (validSuggestions.length > 0) {
+            const disease = validSuggestions[0];
+            diseaseName = disease.name;
+            confidence = Math.round(disease.probability * 100);
+            description = `Detected ${disease.name} with ${confidence}% confidence. `;
+            
+            if (plantIdResult.result.symptom && plantIdResult.result.symptom.suggestions.length > 0) {
+              description += `Symptoms include: ${plantIdResult.result.symptom.suggestions.map(s => s.name).join(", ")}.`;
+            }
+
+            // Add follow-up question if available
+            if (plantIdResult.result.disease.question) {
+              description += `\n\nDiagnostic Question: ${plantIdResult.result.disease.question.text}`;
+            }
+          }
         }
       }
 
-      // If no treatments from Plant.ID, provide basic recommendations
+      // If no specific treatments from response, provide general recommendations
       if (treatments.length === 0) {
         treatments = [
-          "Apply appropriate fungicide as recommended by local agricultural extension",
-          "Remove affected plant parts carefully to prevent spread",
-          "Improve air circulation around plants",
-          "Adjust watering practices to reduce humidity",
-          "Consult with local agricultural experts for specific treatment"
+          "Isolate affected plant to prevent spread",
+          "Remove affected parts if possible",
+          "Adjust watering practices",
+          "Improve air circulation",
+          "Consider appropriate treatment based on specific diagnosis"
         ];
       }
 
-      // If no prevention methods from Plant.ID, provide basic recommendations
+      // If no specific prevention methods, provide general ones
       if (preventionMethods.length === 0) {
         preventionMethods = [
-          "Regular monitoring of plants for early detection",
-          "Proper spacing between plants for air circulation",
-          "Avoid overhead watering to reduce leaf moisture",
-          "Use disease-resistant plant varieties when available",
-          "Maintain good garden hygiene and sanitation"
+          "Regular monitoring for early detection",
+          "Maintain proper plant spacing",
+          "Ensure good air circulation",
+          "Follow proper watering schedule",
+          "Keep growing area clean and debris-free"
         ];
       }
 
@@ -169,7 +177,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analysis = await storage.createDiseaseAnalysis(analysisData);
 
       // Clean up temporary files
-      fs.unlinkSync(req.file.path);
+      try {
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        if (fs.existsSync(processedImagePath)) {
+          fs.unlinkSync(processedImagePath);
+        }
+      } catch (error) {
+        console.warn("Failed to cleanup temporary files:", error);
+        // Continue anyway since the API call was successful
+      }
 
       res.json({
         id: analysis.id,
@@ -189,12 +207,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Since we're only using Plant.ID API, crop recommendations are not available
+  // NEW: Crop recommendation endpoint with ML integration
   app.post("/api/crop-recommendations", async (req, res) => {
-    res.status(501).json({ 
-      error: "Crop recommendations feature is not available in this version. This app focuses on plant disease detection using Plant.ID API.",
-      details: "Please use the disease detection feature instead."
-    });
+    try {
+      const { nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall } = req.body;
+      
+      // Validate input
+      if (typeof nitrogen !== 'number' || typeof phosphorus !== 'number' || 
+          typeof potassium !== 'number' || typeof temperature !== 'number' || 
+          typeof humidity !== 'number' || typeof ph !== 'number' || 
+          typeof rainfall !== 'number') {
+        return res.status(400).json({ error: "All parameters must be numbers" });
+      }
+
+      const scriptPath = path.join(__dirname, 'ml_predict.py');
+      const pythonCommand = process.platform === 'win32' ? 'python' : 'python3';
+      
+      const pythonProcess = spawn(pythonCommand, [
+        scriptPath,
+        nitrogen.toString(),
+        phosphorus.toString(), 
+        potassium.toString(),
+        temperature.toString(),
+        humidity.toString(),
+        ph.toString(),
+        rainfall.toString()
+      ], {
+        cwd: __dirname
+      });
+
+      let result: any = null;
+      let error = '';
+      let stdoutData = '';
+      let stderrData = '';
+
+      pythonProcess.stdout.on('data', (data: Buffer) => {
+        const output = data.toString().trim();
+        stdoutData += output;
+        try {
+          // Only try to parse JSON if the output starts with {
+          if (output.startsWith('{')) {
+            result = JSON.parse(output);
+          }
+        } catch (e) {
+          console.error('Parse error:', e);
+          console.log('Raw output:', output);
+        }
+      });
+
+      pythonProcess.stderr.on('data', (data: Buffer) => {
+        const output = data.toString();
+        stderrData += output;
+        // Only log actual errors, not INFO messages
+        if (!output.includes('INFO:') && !output.includes('UserWarning:')) {
+          error += output;
+        }
+        console.log('Python message:', output);
+      });
+
+      await new Promise((resolve, reject) => {
+        pythonProcess.on('close', (code: number) => {
+          if (code !== 0 || error || !result || !result.success) {
+            if (error) {
+              reject(new Error(error));
+            } else if (!result || !result.success) {
+              reject(new Error('ML prediction failed'));
+            } else {
+              reject(new Error(`Process exited with code ${code}`));
+            }
+          } else {
+            resolve(result);
+          }
+        });
+      });
+
+      // Save recommendation to storage
+      const recommendationData = {
+        nitrogen,
+        phosphorus,
+        potassium,
+        temperature,
+        humidity,
+        ph,
+        rainfall,
+        predictedCrop: result.predicted_crop,
+        confidence: result.confidence,
+        createdAt: new Date()
+      };
+
+      const recommendation = await storage.createCropRecommendation(recommendationData);
+
+      res.json({
+        id: recommendation.id,
+        predicted_crop: result.predicted_crop,
+        confidence: result.confidence,
+        top_predictions: result.top_predictions,
+        feature_importance: result.feature_importance,
+        crop_info: result.crop_info
+      });
+
+    } catch (error) {
+      console.error('Crop recommendation error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate crop recommendation: ' + (error as Error).message 
+      });
+    }
   });
 
   // Get disease analysis by ID

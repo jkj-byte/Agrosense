@@ -13,6 +13,7 @@ export default function Navbar() {
   const navItems = [
     { label: "Home", path: "/" },
     { label: "Disease Detection", path: "/disease-detection" },
+    { label: "Crop Recommendations", path: "/crop-recommendation" },
   ];
 
   return (

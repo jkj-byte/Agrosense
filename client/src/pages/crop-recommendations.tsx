@@ -1,346 +1,441 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp, MapPin, DollarSign, Clock, Download, Edit } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Sprout, TrendingUp, Info, BarChart3 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
-const formSchema = z.object({
-  location: z.string().min(1, "Location is required"),
-  farmSize: z.number().min(1, "Farm size must be greater than 0"),
-  soilType: z.enum(["clay", "sandy", "loam", "silt"], {
-    required_error: "Please select a soil type",
-  }),
-  budget: z.enum(["low", "medium", "high"], {
-    required_error: "Please select a budget range",
-  }),
-  experience: z.enum(["beginner", "intermediate", "expert"], {
-    required_error: "Please select your experience level",
-  }),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
-interface CropRecommendation {
-  name: string;
-  suitability: number;
-  yield: string;
-  season: string;
-  profit: string;
-  description: string;
+interface CropRecommendationRequest {
+  nitrogen: number;
+  phosphorus: number;
+  potassium: number;
+  temperature: number;
+  humidity: number;
+  ph: number;
+  rainfall: number;
 }
 
-interface RecommendationResult {
+interface CropRecommendationResponse {
   id: number;
-  recommendations: CropRecommendation[];
+  predicted_crop: string;
+  confidence: number;
+  top_predictions: Array<[string, number]>;
+  feature_importance: Array<[string, number]>;
+  crop_info: {
+    description: string;
+    growing_season: string;
+    soil_requirements: string;
+    climate: string;
+  };
 }
 
-export default function CropRecommendations() {
-  const [result, setResult] = useState<RecommendationResult | null>(null);
-  const { toast } = useToast();
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      location: "",
-      farmSize: 0,
-      soilType: undefined,
-      budget: undefined,
-      experience: undefined,
+async function getCropRecommendation(data: CropRecommendationRequest): Promise<CropRecommendationResponse> {
+  const response = await fetch('/api/crop-recommendations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify(data),
   });
 
-  const generateRecommendationsMutation = useMutation({
-    mutationFn: async (data: FormData) => {
-      const response = await apiRequest('POST', '/api/crop-recommendations', data);
-      return response.json();
-    },
-    onSuccess: (data: RecommendationResult) => {
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to get crop recommendation');
+  }
+
+  return response.json();
+}
+
+export default function CropRecommendation() {
+  const [formData, setFormData] = useState<CropRecommendationRequest>({
+    nitrogen: '',
+    phosphorus: '',
+    potassium: '',
+    temperature: '',
+    humidity: '',
+    ph: '',
+    rainfall: '',
+  } as any);
+  const [result, setResult] = useState<CropRecommendationResponse | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: getCropRecommendation,
+    onSuccess: (data) => {
       setResult(data);
-      toast({
-        title: "Recommendations Generated",
-        description: "Your crop recommendations are ready!",
-      });
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate recommendations. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error) => {
+      console.error('Crop recommendation error:', error);
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    generateRecommendationsMutation.mutate(data);
+  const handleInputChange = (field: keyof CropRecommendationRequest, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value === '' ? '' : parseFloat(value)
+    }));
   };
 
-  const getSuitabilityColor = (suitability: number) => {
-    if (suitability >= 90) return "bg-green-500";
-    if (suitability >= 75) return "bg-orange-500";
-    return "bg-yellow-500";
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Convert empty strings to 0 and validate
+    const submissionData = Object.entries(formData).reduce((acc, [key, value]) => ({
+      ...acc,
+      [key]: value === '' ? 0 : parseFloat(String(value))
+    }), {} as CropRecommendationRequest);
+    
+    // Validation
+    const errors = [];
+    if (submissionData.nitrogen < 0 || submissionData.nitrogen > 200) errors.push("Nitrogen should be 0-200 kg/ha");
+    if (submissionData.phosphorus < 0 || submissionData.phosphorus > 150) errors.push("Phosphorus should be 0-150 kg/ha");
+    if (submissionData.potassium < 0 || submissionData.potassium > 200) errors.push("Potassium should be 0-200 kg/ha");
+    if (submissionData.temperature < 0 || submissionData.temperature > 50) errors.push("Temperature should be 0-50°C");
+    if (submissionData.humidity < 0 || submissionData.humidity > 100) errors.push("Humidity should be 0-100%");
+    if (submissionData.ph < 0 || submissionData.ph > 14) errors.push("pH should be 0-14");
+    if (submissionData.rainfall < 0 || submissionData.rainfall > 500) errors.push("Rainfall should be 0-500 mm");
+
+    if (errors.length > 0) {
+      alert(errors.join(", "));
+      return;
+    }
+
+    mutation.mutate(submissionData);
   };
 
-  const getCropImage = (cropName: string) => {
-    const images: Record<string, string> = {
-      "Corn": "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
-      "Soybeans": "https://images.unsplash.com/photo-1606868306217-dbf5046868d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
-      "Wheat": "https://images.unsplash.com/photo-1500076656116-558758c991c1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
-      "Rice": "https://images.unsplash.com/photo-1586201375761-83865001e31c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300",
-    };
-    return images[cropName] || "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300";
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.8) return "text-green-600";
+    if (confidence >= 0.6) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  const getConfidenceText = (confidence: number) => {
+    if (confidence >= 0.9) return "Very High";
+    if (confidence >= 0.8) return "High";
+    if (confidence >= 0.7) return "Good";
+    if (confidence >= 0.6) return "Moderate";
+    return "Low";
   };
 
   return (
-    <div className="min-h-screen agro-bg py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold agro-text mb-4">Crop Recommendations</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Get personalized crop suggestions based on your location, soil conditions, and farming goals
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold agro-text mb-4">
+            <Sprout className="inline-block mr-3 agro-green" size={40} />
+            Smart Crop Recommendation
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Get AI-powered crop recommendations based on your soil and climate conditions
           </p>
         </div>
 
-        {/* Form Section */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-2xl agro-text">Farm Information</CardTitle>
-            <CardDescription>
-              Please provide details about your farm to get the most accurate recommendations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your location" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="farmSize"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Farm Size (acres)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="e.g., 50" 
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="soilType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Soil Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select soil type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="clay">Clay</SelectItem>
-                            <SelectItem value="sandy">Sandy</SelectItem>
-                            <SelectItem value="loam">Loam</SelectItem>
-                            <SelectItem value="silt">Silt</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="budget"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Budget Range</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select budget range" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="low">Low ($1,000 - $5,000)</SelectItem>
-                            <SelectItem value="medium">Medium ($5,000 - $15,000)</SelectItem>
-                            <SelectItem value="high">High ($15,000+)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="experience"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Farming Experience</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="grid grid-cols-3 gap-4"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="beginner" id="beginner" />
-                            <label htmlFor="beginner">Beginner</label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="intermediate" id="intermediate" />
-                            <label htmlFor="intermediate">Intermediate</label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="expert" id="expert" />
-                            <label htmlFor="expert">Expert</label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="text-center">
-                  <Button 
-                    type="submit"
-                    className="bg-agro-orange hover:bg-agro-orange/90 text-white px-8 py-4 font-semibold transform hover:scale-105 transition-all shadow-lg"
-                    disabled={generateRecommendationsMutation.isPending}
-                  >
-                    {generateRecommendationsMutation.isPending ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <TrendingUp className="mr-2 h-5 w-5" />
-                        Generate Recommendations
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        {/* Results Section */}
-        {result && (
-          <div className="space-y-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold agro-text mb-4">Recommended Crops for Your Farm</h2>
-              <p className="text-gray-600">Based on your farm parameters, here are the best crop options</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {result.recommendations.map((crop, index) => (
-                <Card key={index} className="overflow-hidden hover:shadow-xl transition-all transform hover:-translate-y-2">
-                  <div className="h-48 relative overflow-hidden">
-                    <img 
-                      src={getCropImage(crop.name)} 
-                      alt={`${crop.name} crop field`} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-4 right-4">
-                      <Badge className={`${getSuitabilityColor(crop.suitability)} text-white px-3 py-1 text-sm font-semibold`}>
-                        {crop.suitability}% Match
-                      </Badge>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Input Form */}
+          <Card className="shadow-lg">
+            <CardHeader className="bg-agro-green text-white">
+              <CardTitle className="flex items-center">
+                <BarChart3 className="mr-2" size={24} />
+                Soil & Climate Analysis
+              </CardTitle>
+              <CardDescription className="text-green-50">
+                Enter your soil test results and local climate data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Soil Nutrients */}
+                <div>
+                  <h3 className="text-lg font-semibold agro-green mb-3">Soil Nutrients (kg/ha)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="nitrogen">Nitrogen (N)</Label>
+                      <Input
+                        id="nitrogen"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="200"
+                        value={formData.nitrogen}
+                        onChange={(e) => handleInputChange('nitrogen', e.target.value)}
+                        placeholder="e.g., 90"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Range: 0-200</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="phosphorus">Phosphorus (P)</Label>
+                      <Input
+                        id="phosphorus"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="150"
+                        value={formData.phosphorus}
+                        onChange={(e) => handleInputChange('phosphorus', e.target.value)}
+                        placeholder="e.g., 42"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Range: 0-150</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="potassium">Potassium (K)</Label>
+                      <Input
+                        id="potassium"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="200"
+                        value={formData.potassium}
+                        onChange={(e) => handleInputChange('potassium', e.target.value)}
+                        placeholder="e.g., 43"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Range: 0-200</p>
                     </div>
                   </div>
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold agro-text mb-2">{crop.name}</h3>
-                    <p className="text-gray-600 mb-4">{crop.description}</p>
-                    
+                </div>
+
+                {/* Soil Properties */}
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-600 mb-3">Soil Properties</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="ph">pH Level</Label>
+                      <Input
+                        id="ph"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="14"
+                        value={formData.ph}
+                        onChange={(e) => handleInputChange('ph', e.target.value)}
+                        placeholder="e.g., 6.5"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Range: 0-14</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="humidity">Humidity (%)</Label>
+                      <Input
+                        id="humidity"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={formData.humidity}
+                        onChange={(e) => handleInputChange('humidity', e.target.value)}
+                        placeholder="e.g., 82"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Range: 0-100%</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Climate Conditions */}
+                <div>
+                  <h3 className="text-lg font-semibold agro-orange mb-3">Climate Conditions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="temperature">Temperature (°C)</Label>
+                      <Input
+                        id="temperature"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        value={formData.temperature}
+                        onChange={(e) => handleInputChange('temperature', e.target.value)}
+                        placeholder="e.g., 21"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Range: 0-50°C</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="rainfall">Rainfall (mm)</Label>
+                      <Input
+                        id="rainfall"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="500"
+                        value={formData.rainfall}
+                        onChange={(e) => handleInputChange('rainfall', e.target.value)}
+                        placeholder="e.g., 203"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Range: 0-500 mm</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-agro-green hover:bg-agro-green-light"
+                  disabled={mutation.isPending}
+                >
+                  {mutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      Get Crop Recommendations
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Results */}
+          {result && (
+            <Card className="shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-green-600 to-green-700 text-white">
+                <CardTitle className="flex items-center">
+                  <Sprout className="mr-2" size={24} />
+                  Recommended Crop
+                </CardTitle>
+                <CardDescription className="text-green-50">
+                  AI-powered analysis results
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  {/* Main Recommendation */}
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <h2 className="text-3xl font-bold agro-green capitalize mb-2">
+                      {result.predicted_crop}
+                    </h2>
+                    <div className={`text-xl font-semibold ${getConfidenceColor(result.confidence)}`}>
+                      {(result.confidence * 100).toFixed(1)}% Confidence
+                      <span className="text-sm ml-2">({getConfidenceText(result.confidence)})</span>
+                    </div>
+                  </div>
+
+                  {/* Crop Information */}
+                  {result.crop_info && result.crop_info.description && (
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500 flex items-center">
-                          <TrendingUp className="h-4 w-4 mr-1" />
-                          Expected Yield:
-                        </span>
-                        <span className="text-sm font-semibold">{crop.yield}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500 flex items-center">
-                          <Clock className="h-4 w-4 mr-1" />
-                          Growing Season:
-                        </span>
-                        <span className="text-sm font-semibold">{crop.season}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500 flex items-center">
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          Profit Potential:
-                        </span>
-                        <span className="text-sm font-semibold text-green-600">{crop.profit}</span>
+                      <h3 className="font-semibold agro-text">Crop Information</h3>
+                      <p className="text-sm text-muted-foreground">{result.crop_info.description}</p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        {result.crop_info.growing_season && (
+                          <div>
+                            <span className="font-medium">Growing Season:</span>
+                            <p className="text-muted-foreground">{result.crop_info.growing_season}</p>
+                          </div>
+                        )}
+                        {result.crop_info.climate && (
+                          <div>
+                            <span className="font-medium">Climate:</span>
+                            <p className="text-muted-foreground">{result.crop_info.climate}</p>
+                          </div>
+                        )}
+                        {result.crop_info.soil_requirements && (
+                          <div className="md:col-span-2">
+                            <span className="font-medium">Soil Requirements:</span>
+                            <p className="text-muted-foreground">{result.crop_info.soil_requirements}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
+                  )}
 
-                    <Button className="w-full mt-4 bg-agro-green hover:bg-agro-green/90 text-white">
-                      View Details
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  {/* Alternative Recommendations */}
+                  {result.top_predictions && result.top_predictions.length > 1 && (
+                    <div>
+                      <h3 className="font-semibold agro-text mb-3">Alternative Recommendations</h3>
+                      <div className="space-y-2">
+                        {result.top_predictions.slice(0, 3).map(([crop, confidence], index) => (
+                          <div key={crop} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                            <span className="capitalize font-medium">{crop}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-20 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full ${index === 0 ? 'bg-green-500' : 'bg-gray-400'}`}
+                                  style={{ width: `${confidence * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-muted-foreground">
+                                {(confidence * 100).toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-            <div className="text-center space-x-4">
-              <Button 
-                className="bg-agro-orange hover:bg-agro-orange/90 text-white px-8 py-3 font-semibold"
-                onClick={() => {
-                  toast({
-                    title: "Farming Plan Generated",
-                    description: "Your personalized farming plan is ready for download.",
-                  });
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Farming Plan
-              </Button>
-              <Button 
-                variant="outline" 
-                className="px-8 py-3 font-semibold"
-                onClick={() => setResult(null)}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Modify Parameters
-              </Button>
+                  {/* Feature Importance */}
+                  {result.feature_importance && result.feature_importance.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold agro-text mb-3">Key Factors Analysis</h3>
+                      <div className="space-y-2">
+                        {result.feature_importance.slice(0, 5).map(([feature, importance]) => (
+                          <div key={feature} className="flex justify-between items-center">
+                            <span className="capitalize text-sm">{feature}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                                <div 
+                                  className="h-1.5 rounded-full bg-agro-green"
+                                  style={{ width: `${importance * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground w-12">
+                                {(importance * 100).toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      These recommendations are based on the provided parameters. 
+                      Consider local conditions and consult agricultural experts for best results.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Help Section */}
+        <Card className="mt-8 border-blue-200">
+          <CardHeader className="bg-blue-50">
+            <CardTitle className="text-blue-800">Need Help with Parameters?</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-semibold agro-green mb-2">Soil Testing Tips:</h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Get soil tested from agricultural lab</li>
+                  <li>• Collect samples from multiple field points</li>
+                  <li>• Test at 6-8 inch depth for nutrients</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-blue-600 mb-2">Climate Data Sources:</h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Local weather station data</li>
+                  <li>• Agricultural extension services</li>
+                  <li>• Online weather portals</li>
+                </ul>
+              </div>
             </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

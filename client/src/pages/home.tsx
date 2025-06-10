@@ -25,11 +25,17 @@ export default function Home() {
           <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
             Empowering farmers with AI-powered plant disease detection using advanced image recognition technology
           </p>
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4">
             <Link href="/disease-detection">
               <Button size="lg" className="bg-agro-green hover:bg-agro-green/90 text-white px-12 py-4 text-lg font-semibold transform hover:scale-105 transition-all shadow-lg">
                 <Microscope className="mr-2 h-5 w-5" />
                 Detect Plant Diseases
+              </Button>
+            </Link>
+            <Link href="/crop-recommendation">
+              <Button size="lg" className="bg-agro-green hover:bg-agro-green/90 text-white px-12 py-4 text-lg font-semibold transform hover:scale-105 transition-all shadow-lg">
+                <TrendingUp className="mr-2 h-5 w-5" />
+                Crop Recommendations
               </Button>
             </Link>
           </div>
@@ -38,7 +44,7 @@ export default function Home() {
 
       {/* Feature Cards Section */}
       <section className="py-20 px-4 max-w-7xl mx-auto">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-8">
           {/* Plant Disease Detection Card */}
           <Card className="feature-card overflow-hidden hover:shadow-2xl">
             <div 
@@ -96,6 +102,68 @@ export default function Home() {
               <Link href="/disease-detection">
                 <Button className="w-full bg-agro-green hover:bg-agro-green/90 text-white text-lg py-3">
                   Start Disease Detection
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Crop Recommendation Card */}
+          <Card className="feature-card overflow-hidden hover:shadow-2xl">
+            <div 
+              className="h-64 bg-gradient-to-br from-agro-green to-agro-green-light relative overflow-hidden"
+              style={{
+                backgroundImage: "url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-agro-green/60 to-transparent" />
+            </div>
+            <CardHeader>
+              <div className="flex items-center mb-4">
+                <div className="bg-agro-green/10 p-3 rounded-full mr-4">
+                  <TrendingUp className="text-agro-green h-6 w-6" />
+                </div>
+                <CardTitle className="text-2xl agro-text">Smart Crop Recommendations</CardTitle>
+              </div>
+              <CardDescription className="text-gray-600 leading-relaxed">
+                Get AI-powered crop recommendations based on soil conditions, climate data, and historical patterns. Our advanced system helps you make data-driven decisions for optimal crop selection.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="space-y-3">
+                  <div className="flex items-center text-sm text-gray-700">
+                    <div className="w-2 h-2 bg-agro-green rounded-full mr-3" />
+                    <span>Soil analysis integration</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <div className="w-2 h-2 bg-agro-green rounded-full mr-3" />
+                    <span>Climate data analysis</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <div className="w-2 h-2 bg-agro-green rounded-full mr-3" />
+                    <span>Seasonal recommendations</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center text-sm text-gray-700">
+                    <div className="w-2 h-2 bg-agro-green rounded-full mr-3" />
+                    <span>ML-powered predictions</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <div className="w-2 h-2 bg-agro-green rounded-full mr-3" />
+                    <span>Region-specific advice</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-700">
+                    <div className="w-2 h-2 bg-agro-green rounded-full mr-3" />
+                    <span>Yield optimization</span>
+                  </div>
+                </div>
+              </div>
+              <Link href="/crop-recommendation">
+                <Button className="w-full bg-agro-green hover:bg-agro-green/90 text-white text-lg py-3">
+                  Get Crop Recommendations
                 </Button>
               </Link>
             </CardContent>
