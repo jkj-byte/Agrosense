@@ -2,20 +2,6 @@
 
 An intelligent agricultural platform that combines AI-powered plant disease detection and smart crop recommendations to help farmers make data-driven decisions.
 
-## Screenshots 📸
-
-### Home Page
-![Home Page](https://i.imgur.com/YOUR_IMAGE_ID.png)
-Modern landing page with easy access to both main features.
-
-### Disease Detection
-![Disease Detection](https://i.imgur.com/YOUR_IMAGE_ID.png)
-Upload plant images to get instant disease identification and treatment recommendations.
-
-### Crop Recommendations
-![Crop Recommendations](https://i.imgur.com/YOUR_IMAGE_ID.png)
-Get AI-powered crop suggestions based on soil and climate conditions.
-
 ## Features 🚀
 
 ### 1. Plant Disease Detection
@@ -40,6 +26,43 @@ Get AI-powered crop suggestions based on soil and climate conditions.
   - 22 different crop varieties
   - Soil composition data
   - Climate parameters
+
+## Development Journey & Learnings 📚
+
+During the development of AgroSense, several key learnings and challenges were encountered:
+
+### Technical Skills Acquired
+- Integrated AI services (Plant.ID API) with React frontend
+- Implemented machine learning models using Python for crop recommendations
+- Built a full-stack application using TypeScript and modern web technologies
+- Learned to handle real-time data processing and API interactions
+- Gained experience with modern UI libraries (Shadcn/ui, Tailwind CSS)
+
+### Challenges Overcome
+1. **Data Processing**
+   - Handled complex soil and climate data for accurate crop recommendations
+   - Implemented efficient image processing for plant disease detection
+   - Managed data flow between Python ML models and Node.js server
+
+2. **User Experience**
+   - Designed an intuitive interface for inputting technical agricultural data
+   - Created responsive layouts that work on both desktop and mobile devices
+   - Implemented real-time feedback for user interactions
+
+3. **System Integration**
+   - Successfully integrated multiple technologies:
+     - Frontend: React, TypeScript, Tailwind CSS
+     - Backend: Node.js, Python
+     - ML: Scikit-learn for crop recommendations
+     - External APIs: Plant.ID for disease detection
+
+### Key Achievements
+- Developed a production-ready agricultural assistance tool
+- Successfully implemented two complex features:
+  - AI-powered plant disease detection
+  - ML-based crop recommendation system
+- Created a user-friendly interface for technical agricultural data
+- Achieved high accuracy in crop recommendations using ML models
 
 ## Tech Stack 💻
 
@@ -91,8 +114,6 @@ npx tsx server/index.ts
 
 The application will be available at `http://localhost:5000`
 
-> Note: The application runs on port 5000 by default. Make sure this port is available on your system.
-
 ## Project Structure 📁
 
 ```
@@ -138,72 +159,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Plant.ID API for plant disease detection
 - Shadcn/ui for beautiful components
 - Crop Recommendation Dataset from Kaggle
-
-## Development Journey & Learnings 📚
-
-During the development of AgroSense, several key learnings and challenges were encountered:
-
-### Technical Skills Acquired
-- Integrated AI services (Plant.ID API) with React frontend
-- Implemented machine learning models using Python for crop recommendations
-- Built a full-stack application using TypeScript and modern web technologies
-- Learned to handle real-time data processing and API interactions
-- Gained experience with modern UI libraries (Shadcn/ui, Tailwind CSS)
-
-### Challenges Overcome
-1. **Data Processing**
-   - Handled complex soil and climate data for accurate crop recommendations
-   - Implemented efficient image processing for plant disease detection
-   - Managed data flow between Python ML models and Node.js server
-
-2. **User Experience**
-   - Designed an intuitive interface for inputting technical agricultural data
-   - Created responsive layouts that work on both desktop and mobile devices
-   - Implemented real-time feedback for user interactions
-
-3. **System Integration**
-   - Successfully integrated multiple technologies:
-     - Frontend: React, TypeScript, Tailwind CSS
-     - Backend: Node.js, Python
-     - ML: Scikit-learn for crop recommendations
-     - External APIs: Plant.ID for disease detection
-
-### Key Achievements
-- Developed a production-ready agricultural assistance tool
-- Successfully implemented two complex features:
-  - AI-powered plant disease detection
-  - ML-based crop recommendation system
-- Created a user-friendly interface for technical agricultural data
-- Achieved high accuracy in crop recommendations using ML models
-
-## Features in Action 🎯
-
-### Home Page
-Clean and modern landing page providing easy access to both main features:
-- Plant Disease Detection
-- Crop Recommendations
-
-### Disease Detection Feature
-1. Upload a clear photo of your plant
-2. Supports JPG, PNG files up to 10MB
-3. Get instant results including:
-   - Disease identification
-   - Confidence level
-   - Treatment recommendations
-   - Prevention strategies
-
-### Crop Recommendation System
-1. Input your soil parameters:
-   - Nitrogen (N): 0-200 kg/ha
-   - Phosphorus (P): 0-150 kg/ha
-   - Potassium (K): 0-200 kg/ha
-   - pH level: 0-14
-2. Add climate conditions:
-   - Temperature: 0-50°C
-   - Humidity: 0-100%
-   - Rainfall: 0-500mm
-3. Get AI-powered recommendations:
-   - Best suited crop
-   - Confidence score
-   - Alternative recommendations
-   - Key factors analysis
