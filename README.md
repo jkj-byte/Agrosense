@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AgroSense 🌱
 
 An intelligent agricultural platform that combines AI-powered plant disease detection and smart crop recommendations to help farmers make data-driven decisions.
@@ -117,3 +118,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Plant.ID API for plant disease detection
 - Shadcn/ui for beautiful components
 - All contributors who helped with the project 
+=======
+# Agrosense
+"AI-powered agricultural platform that combines plant disease detection and crop recommendation systems. Features Plant.ID integration for disease identification across 30,000+ plant species and ML-based crop recommendations using soil and climate data."
+>>>>>>> ee45bb97a6a192b1f5d5c73dc868d1ca6de379c5
