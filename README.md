@@ -2,6 +2,28 @@
 
 An intelligent agricultural platform that combines AI-powered plant disease detection and smart crop recommendations to help farmers make data-driven decisions.
 
+## Screenshots 📸
+
+### Home Page
+![Home Page](screenshots/home.png.png)
+![Home Features](screenshots/home1.png.png)
+![Home Details](screenshots/home2.png.png)
+Modern landing page with easy access to both main features.
+
+### Disease Detection
+![Disease Detection Upload](screenshots/disease-detection.png.png)
+![Disease Detection Results](screenshots/disease-detection1.png.png)
+Upload plant images to get instant disease identification and treatment recommendations.
+
+Detailed disease analysis with confidence scores and treatment suggestions.
+
+### Crop Recommendations
+![Crop Input Form](screenshots/crop-recommendation.png.png)
+![Crop Analysis Results](screenshots/crop-recommendation1.png.png)
+Input form for soil and climate parameters.
+
+AI-powered crop suggestions with confidence scores and alternative recommendations.
+
 ## Features 🚀
 
 ### 1. Plant Disease Detection
