@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: agrosense
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    buildFilter:
+      paths:
+        - package.json
+        - src/**
+        - server/**
+    preInstallCommand: |
+      # Install Python and pip
+      apt-get update && apt-get install -y python3 python3-pip
+      # Install any Python dependencies your ML script needs
+      pip3 install scikit-learn pandas numpy 
