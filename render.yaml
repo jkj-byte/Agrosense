@@ -12,6 +12,8 @@ services:
       # Activate virtual environment and install packages
       . /opt/venv/bin/activate
       pip3 install --no-cache-dir --break-system-packages scikit-learn pandas numpy
+      # Make Python files executable
+      chmod +x server/*.py
       # Now build the Node.js app
       npm install && npm run build
     startCommand: npm start
@@ -21,7 +23,7 @@ services:
       - key: PORT
         value: "5000"
       - key: PYTHONPATH
-        value: /opt/venv/bin/python
+        value: /opt/venv/bin/python:/app/dist
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: PATH

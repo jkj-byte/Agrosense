@@ -22,6 +22,9 @@ RUN npm install
 # Copy the rest of the application
 COPY . .
 
+# Ensure Python files are executable
+RUN chmod +x server/*.py
+
 # Build the application
 RUN npm run build
 
@@ -29,7 +32,7 @@ RUN npm run build
 EXPOSE 5000
 
 # Set Python environment variables
-ENV PYTHONPATH=/opt/venv/bin/python
+ENV PYTHONPATH=/opt/venv/bin/python:/app/dist
 ENV PYTHONUNBUFFERED=1
 
 # Start the application
