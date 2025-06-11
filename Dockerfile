@@ -2,11 +2,16 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Install Python and required packages
+# Install Python and create virtual environment
 RUN apt-get update && \
-    apt-get install -y python3-full python3-pip && \
-    update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
-    python3 -m pip install --no-cache-dir scikit-learn pandas numpy
+    DEBIAN_FRONTEND=noninteractive apt-get install -y python3-full python3-pip python3-venv && \
+    python3 -m venv /opt/venv && \
+    chmod -R 777 /opt/venv
+
+# Activate virtual environment and install Python packages
+ENV PATH="/opt/venv/bin:$PATH"
+RUN . /opt/venv/bin/activate && \
+    pip3 install --no-cache-dir --break-system-packages scikit-learn pandas numpy
 
 # Copy package files
 COPY package*.json ./
@@ -24,7 +29,7 @@ RUN npm run build
 EXPOSE 5000
 
 # Set Python environment variables
-ENV PYTHONPATH=/usr/bin/python3
+ENV PYTHONPATH=/opt/venv/bin/python
 ENV PYTHONUNBUFFERED=1
 
 # Start the application

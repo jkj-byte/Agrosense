@@ -4,13 +4,14 @@ services:
     env: node
     plan: free
     buildCommand: |
-      # Install Python first
+      # Install Python and create virtual environment
       apt-get update
-      apt-get install -y python3-full python3-pip
-      # Make python3 the default python
-      update-alternatives --install /usr/bin/python python /usr/bin/python3 1
-      # Install Python packages
-      python3 -m pip install --no-cache-dir scikit-learn pandas numpy
+      DEBIAN_FRONTEND=noninteractive apt-get install -y python3-full python3-pip python3-venv
+      python3 -m venv /opt/venv
+      chmod -R 777 /opt/venv
+      # Activate virtual environment and install packages
+      . /opt/venv/bin/activate
+      pip3 install --no-cache-dir --break-system-packages scikit-learn pandas numpy
       # Now build the Node.js app
       npm install && npm run build
     startCommand: npm start
@@ -20,6 +21,8 @@ services:
       - key: PORT
         value: "5000"
       - key: PYTHONPATH
-        value: /usr/bin/python3
+        value: /opt/venv/bin/python
       - key: PYTHONUNBUFFERED
-        value: "1" 
+        value: "1"
+      - key: PATH
+        value: /opt/venv/bin:$PATH 
